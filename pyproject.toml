@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "ultima-scraper-renamer"
+version = "0.0.1"
+description = ""
+authors = ["DIGITALCRIMINALS <89371864+DIGITALCRIMINALS@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "ultima_scraper_renamer"}]
+include = ["ultima_scraper_renamer/py.typed"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+tqdm = "^4.64.1"
+ultima-scraper-api = "^0.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

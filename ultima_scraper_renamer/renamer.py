@@ -8,16 +8,16 @@ from datetime import datetime
 from itertools import chain
 from pathlib import Path
 
+import ultima_scraper_api
 import ultima_scraper_api.database.databases.user_data.user_database as user_database
-from ultima_scraper_api.classes.make_settings import SiteSettings
-from ultima_scraper_api.classes.prepare_metadata import prepare_reformat
-from ultima_scraper_api.database.databases.user_data.models.api_table import api_table
-from ultima_scraper_api.database.databases.user_data.models.media_table import (
-    template_media_table,
-)
 from sqlalchemy.orm.scoping import scoped_session
 from tqdm.asyncio import tqdm
-import ultima_scraper_api
+from ultima_scraper_api.classes.make_settings import SiteSettings
+from ultima_scraper_api.classes.prepare_metadata import prepare_reformat
+from ultima_scraper_api.database.databases.user_data.models.api_table import \
+    api_table
+from ultima_scraper_api.database.databases.user_data.models.media_table import \
+    template_media_table
 
 user_types = ultima_scraper_api.user_types
 
@@ -128,7 +128,7 @@ async def fix_directories(
                                 moved = shutil.move(old_filepath, new_filepath)
                         else:
                             break
-                    except OSError as e:
+                    except OSError as _e:
                         print(traceback.format_exc())
                     print
                 print

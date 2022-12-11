@@ -10,7 +10,8 @@ include = ["ultima_scraper_renamer/py.typed"]
 [tool.poetry.dependencies]
 python = "^3.10"
 tqdm = "^4.64.1"
-ultima-scraper-api = "^0.0.1"
+ultima-scraper-api = "^0.0.1.1"
+orjson = "^3.8.3"
 
 
 [build-system]

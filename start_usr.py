@@ -1,17 +1,22 @@
 import asyncio
-from ultima_scraper_renamer import renamer
+
 import ultima_scraper_api
-from ultima_scraper_api.database.db_manager import DBManager
 from ultima_scraper_api.database.databases.user_data import user_database
+from ultima_scraper_api.database.db_manager import DBManager
+
 import setup
+from ultima_scraper_renamer import renamer
+
 if __name__ == "__main__":
+
     async def main():
         # WORK IN PROGRESS
         import ultima_scraper_api.helpers.main_helper as main_helper
+
         config = setup.start()
         config_path = config.ultima_scraper_directory.joinpath(".settings/config.json")
         us_config, _updated = main_helper.get_config(config_path)
-        api = ultima_scraper_api.select_api("onlyfans",us_config)
+        api = ultima_scraper_api.select_api("onlyfans", us_config)
         authed = api.add_auth()
         sites_directories = config.ultima_scraper_directory.joinpath(".sites")
         for sites_directory in sites_directories.iterdir():
@@ -23,14 +28,14 @@ if __name__ == "__main__":
                 success_string = f"Renamed {folder_identifier}'s files"
                 failure_string = f"Failed to rename {folder_identifier}'s files"
                 print(f"Renaming {user_directory}'s files")
-                db_path = user_directory.joinpath("Metadata","user_data.db")
+                db_path = user_directory.joinpath("Metadata", "user_data.db")
                 resolved = False
                 if db_path.exists():
-                    db_manager = DBManager(db_path)
-                    Session ,_=await db_manager.create_database_session()
+                    db_manager = DBManager(db_path, "")
+                    Session, _ = await db_manager.create_database_session()
                     database_session, _engine = await db_manager.import_database()
                     content_types = authed.api.ContentTypes()
-                    for api_type,_ in content_types:
+                    for api_type, _ in content_types:
                         if resolved:
                             break
                         if api_type != "Posts":
@@ -44,15 +49,18 @@ if __name__ == "__main__":
                                 await main_helper.format_directories(
                                     user.directory_manager, user
                                 )
-                                _metadata = await renamer.start(user,"Posts",Session,api.get_site_settings())
+                                _metadata = await renamer.start(
+                                    user, "Posts", Session, api.get_site_settings()
+                                )
                                 resolved = True
                                 break
                             pass
-                    print(f'{success_string if resolved else failure_string}')
+                    print(f"{success_string if resolved else failure_string}")
                 pass
             pass
         pass
         pass
+
     asyncio.run(main())
 
     # Enhance the resolver:

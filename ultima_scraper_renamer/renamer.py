@@ -14,10 +14,10 @@ from sqlalchemy.orm.scoping import scoped_session
 from tqdm.asyncio import tqdm
 from ultima_scraper_api.classes.make_settings import SiteSettings
 from ultima_scraper_api.classes.prepare_metadata import prepare_reformat
-from ultima_scraper_api.database.databases.user_data.models.api_table import \
-    api_table
-from ultima_scraper_api.database.databases.user_data.models.media_table import \
-    template_media_table
+from ultima_scraper_api.database.databases.user_data.models.api_table import api_table
+from ultima_scraper_api.database.databases.user_data.models.media_table import (
+    template_media_table,
+)
 
 user_types = ultima_scraper_api.user_types
 
@@ -171,12 +171,12 @@ async def start(
     subscription: user_types,
     api_type: str,
     Session: scoped_session,
-    site_settings: SiteSettings,
 ):
     authed = subscription.get_authed()
     directory_manager = subscription.directory_manager
     api_table_ = user_database.table_picker(api_type)
     database_session: scoped_session = Session()
+    site_settings = authed.api.get_site_settings()
     # Slow
     authed_username = authed.username
     subscription_username = subscription.username

@@ -6,7 +6,7 @@ from usr_settings import Settings
 
 
 def start():
-    config_file = Path(".settings", "config.json")
+    config_file = Path("__settings__", "config.json")
     if not config_file.exists():
         ultima_scraper_directory = Path(
             input(

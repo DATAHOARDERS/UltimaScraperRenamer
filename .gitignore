@@ -149,5 +149,5 @@ $RECYCLE.BIN/
 .metadatas
 .sites
 *.log
-.settings/*
+__settings__
 typings

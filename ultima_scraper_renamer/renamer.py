@@ -12,7 +12,6 @@ import ultima_scraper_api
 import ultima_scraper_api.database.databases.user_data.user_database as user_database
 from sqlalchemy.orm.scoping import scoped_session
 from tqdm.asyncio import tqdm
-from ultima_scraper_api.classes.make_settings import SiteSettings
 from ultima_scraper_api.classes.prepare_metadata import prepare_reformat
 from ultima_scraper_api.database.databases.user_data.models.api_table import api_table
 from ultima_scraper_api.database.databases.user_data.models.media_table import (
@@ -82,6 +81,8 @@ async def fix_directories(
             old_filepath = ""
             if media.linked:
                 filename_format = filename_format.with_name(f"linked_{filename_format}")
+            if post.archived:
+                prepared_format.api_type = final_api_type.replace("/", "")
             new_filepath = await prepared_format.reformat_2(filename_format)
             old_filepaths = [
                 x

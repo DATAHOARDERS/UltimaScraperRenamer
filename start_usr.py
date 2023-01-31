@@ -17,9 +17,8 @@ if __name__ == "__main__":
         config_path = config.ultima_scraper_directory.joinpath(".settings/config.json")
         us_config, _updated = main_helper.get_config(config_path)
         api = ultima_scraper_api.select_api("onlyfans", us_config)
-        authed = api.add_auth()
-        sites_directories = config.ultima_scraper_directory.joinpath(".sites")
-        for sites_directory in sites_directories.iterdir():
+        auth = api.add_auth()
+        authed = await auth.login(guest=True)
             if sites_directory.stem != "OnlyFans":
                 continue
             # In the future, the script must allow users to choose which folder to resolve

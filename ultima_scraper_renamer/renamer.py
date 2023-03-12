@@ -9,22 +9,29 @@ from itertools import chain
 from pathlib import Path
 
 import ultima_scraper_api
-import ultima_scraper_api.database.databases.user_data.user_database as user_database
-from sqlalchemy.orm.scoping import scoped_session
+from sqlalchemy.orm import Session, sessionmaker
 from tqdm.asyncio import tqdm
-from ultima_scraper_api.classes.prepare_metadata import prepare_reformat
-from ultima_scraper_api.database.databases.user_data.models.api_table import api_table
-from ultima_scraper_api.database.databases.user_data.models.media_table import (
-    template_media_table,
+from ultima_scraper_collection.managers.database_manager.connections.sqlite.models import (
+    user_database,
 )
+from ultima_scraper_collection.managers.database_manager.connections.sqlite.models.api_model import (
+    ApiModel,
+)
+from ultima_scraper_collection.managers.database_manager.connections.sqlite.models.media_model import (
+    TemplateMediaModel,
+)
+from ultima_scraper_collection.managers.filesystem_manager import DirectoryManager
+
+from ultima_scraper_renamer.reformat import prepare_reformat
 
 user_types = ultima_scraper_api.user_types
 
 
 async def fix_directories(
-    posts: list[api_table],
+    posts: list[ApiModel],
     subscription: user_types,
-    database_session: scoped_session,
+    directory_manager: DirectoryManager,
+    database_session: Session,
     api_type: str,
 ):
     new_directories = []
@@ -33,7 +40,7 @@ async def fix_directories(
     site_settings = api.get_site_settings()
 
     async def fix_directories2(
-        post: api_table, media_db: list[template_media_table], all_files: list[Path]
+        post: ApiModel, media_db: list[TemplateMediaModel], all_files: list[Path]
     ):
         delete_rows = []
         final_api_type = (
@@ -56,7 +63,7 @@ async def fix_directories(
             filename_format = site_settings.filename_format
             date_format = site_settings.date_format
             text_length = site_settings.text_length
-            download_path = subscription.directory_manager.root_download_directory
+            download_path = directory_manager.root_download_directory
             option = {}
             option["site_name"] = api.site_name
             option["post_id"] = post_id
@@ -91,7 +98,6 @@ async def fix_directories(
             ]
             if not old_filepaths:
                 old_filepaths = [x for x in all_files if str(media_id) in x.name]
-                print
             if not media.linked:
                 old_filepaths: list[Path] = [
                     x for x in old_filepaths if "linked_" not in x.parts
@@ -131,8 +137,6 @@ async def fix_directories(
                             break
                     except OSError as _e:
                         print(traceback.format_exc())
-                    print
-                print
 
             if os.path.exists(new_filepath):
                 if media.size:
@@ -144,14 +148,10 @@ async def fix_directories(
             new_directories.append(os.path.dirname(new_filepath))
         return delete_rows
 
-    base_directory = subscription.directory_manager.user.find_legacy_directory(
-        "download", api_type
-    )
-    temp_files: list[Path] = await subscription.directory_manager.walk(base_directory)
+    base_directory = directory_manager.user.find_legacy_directory("download", api_type)
+    temp_files: list[Path] = await directory_manager.walk(base_directory)
     result = database_session.query(user_database.media_table)
     media_db = result.all()
-    pool = api.pool
-    # tasks = pool.starmap(fix_directories2, product(posts, [media_db]))
     tasks = [
         asyncio.ensure_future(fix_directories2(post, media_db, temp_files))
         for post in posts
@@ -170,13 +170,13 @@ async def fix_directories(
 
 async def start(
     subscription: user_types,
+    directory_manager: DirectoryManager,
     api_type: str,
-    Session: scoped_session,
+    Session: sessionmaker[Session],
 ):
     authed = subscription.get_authed()
-    directory_manager = subscription.directory_manager
     api_table_ = user_database.table_picker(api_type)
-    database_session: scoped_session = Session()
+    database_session = Session()
     site_settings = authed.api.get_site_settings()
     # Slow
     authed_username = authed.username
@@ -193,12 +193,13 @@ async def start(
         directory=directory_manager.root_metadata_directory,
     )
     p_r.api_type = api_type
-    result: list[api_table] = database_session.query(api_table_).all()
+    result: list[ApiModel] = database_session.query(api_table_).all()
     metadata = getattr(subscription.temp_scraped, api_type)
 
     await fix_directories(
         result,
         subscription,
+        directory_manager,
         database_session,
         api_type,
     )

@@ -1,8 +1,15 @@
 import asyncio
 
 import ultima_scraper_api
-from ultima_scraper_api.database.databases.user_data import user_database
-from ultima_scraper_api.database.db_manager import DBManager
+from ultima_scraper_collection.managers.database_manager.connections.sqlite.models import (
+    user_database,
+)
+from ultima_scraper_collection.managers.database_manager.database_manager import (
+    DatabaseManager,
+)
+from ultima_scraper_collection.managers.datascraper_manager.datascraper_manager import (
+    DataScraperManager,
+)
 
 import setup
 from ultima_scraper_renamer import renamer
@@ -18,7 +25,10 @@ if __name__ == "__main__":
             "__settings__/config.json"
         )
         us_config, _updated = main_helper.get_config(config_path)
+        datascraper_manager = DataScraperManager()
+
         api = ultima_scraper_api.select_api("onlyfans", us_config)
+        datascraper = datascraper_manager.select_datascraper(api)
         site_settings = us_config.supported.onlyfans.settings
         auth = api.add_auth()
         authed = await auth.login(guest=True)
@@ -28,7 +38,8 @@ if __name__ == "__main__":
             else metadata_directory
             for metadata_directory in site_settings.metadata_directories
         ]
-        api.filesystem_manager.activate_directory_manager(api)
+        datascraper.filesystem_manager.activate_directory_manager(datascraper.api)
+        # api.filesystem_manager.activate_directory_manager(api)
         for metadata_directory in site_settings.metadata_directories:
             for sites_directory in metadata_directory.iterdir():
                 if sites_directory.stem != "OnlyFans":
@@ -42,9 +53,8 @@ if __name__ == "__main__":
                     db_path = user_directory.joinpath("Metadata", "user_data.db")
                     resolved = False
                     if db_path.exists():
-                        db_manager = DBManager(db_path, "")
-                        Session, _ = await db_manager.create_database_session()
-                        database_session, _engine = await db_manager.import_database()
+                        db_manager = DatabaseManager().get_sqlite_db(db_path)
+                        database_session = db_manager.session
                         content_types = authed.api.ContentTypes()
                         for api_type, _ in content_types:
                             if resolved:
@@ -58,12 +68,20 @@ if __name__ == "__main__":
                                     post_id=db_post.post_id
                                 )
                                 if user:
-                                    await user.create_directory_manager(user=True)
-                                    await main_helper.format_directories(user)
-                                    _metadata = await renamer.start(
-                                        user, "Posts", Session
+                                    directory_manager = await datascraper.filesystem_manager.create_directory_manager(
+                                        datascraper.api, user
                                     )
-                                    resolved = True
+                                    await datascraper.filesystem_manager.format_directories(
+                                        user
+                                    )
+                                    if directory_manager:
+                                        _metadata = await renamer.start(
+                                            user,
+                                            directory_manager,
+                                            "Posts",
+                                            db_manager.session_factory,
+                                        )
+                                        resolved = True
                                     break
                                 pass
                         print(f"{success_string if resolved else failure_string}")

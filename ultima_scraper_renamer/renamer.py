@@ -194,7 +194,7 @@ async def start(
     )
     p_r.api_type = api_type
     result: list[ApiModel] = database_session.query(api_table_).all()
-    metadata = getattr(subscription.temp_scraped, api_type)
+    metadata = getattr(subscription.scrape_manager.scraped, api_type)
 
     await fix_directories(
         result,

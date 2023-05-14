@@ -68,18 +68,18 @@ async def fix_directories(
             option["site_name"] = api.site_name
             option["post_id"] = post_id
             option["media_id"] = media_id
-            option["profile_username"] = authed.username
-            option["model_username"] = subscription.username
-            option["api_type"] = final_api_type
-            option["media_type"] = media.media_type
             option["filename"] = original_filename
             option["ext"] = ext
+            option["api_type"] = final_api_type
+            option["media_type"] = media.media_type
             option["text"] = post.text
-            option["postedAt"] = media.created_at
-            option["price"] = post.price
+            option["profile_username"] = authed.username
+            option["model_username"] = subscription.username
             option["date_format"] = date_format
+            option["postedAt"] = media.created_at
             option["text_length"] = text_length
             option["directory"] = download_path
+            option["price"] = post.price
             option["preview"] = media.preview
             option["archived"] = post.archived
             prepared_format = prepare_reformat(option)
@@ -174,34 +174,20 @@ async def start(
     api_type: str,
     Session: sessionmaker[Session],
 ):
-    authed = subscription.get_authed()
-    api_table_ = user_database.table_picker(api_type)
-    database_session = Session()
-    site_settings = authed.api.get_site_settings()
-    # Slow
-    authed_username = authed.username
-    subscription_username = subscription.username
-    site_name = authed.api.site_name
-    p_r = prepare_reformat()
-    p_r = await p_r.standard(
-        site_name=site_name,
-        profile_username=authed_username,
-        user_username=subscription_username,
-        date=datetime.today(),
-        date_format=site_settings.date_format,
-        text_length=site_settings.text_length,
-        directory=directory_manager.root_metadata_directory,
-    )
-    p_r.api_type = api_type
-    result: list[ApiModel] = database_session.query(api_table_).all()
     metadata = getattr(subscription.scrape_manager.scraped, api_type)
-
-    await fix_directories(
-        result,
-        subscription,
-        directory_manager,
-        database_session,
-        api_type,
-    )
-    database_session.close()
     return metadata
+    try:
+        api_table_ = user_database.table_picker(api_type)
+        database_session = Session()
+        result: list[ApiModel] = database_session.query(api_table_).all()
+
+        await fix_directories(
+            result,
+            subscription,
+            directory_manager,
+            database_session,
+            api_type,
+        )
+        database_session.close()
+    except Exception as _e:
+        pass

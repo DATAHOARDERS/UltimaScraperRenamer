@@ -260,10 +260,13 @@ class ReformatItem:
         if type(date) is str:
             format_variables2 = format_attributes()
             if date != format_variables2.date and date != "":
-                date = datetime.strptime(date, "%d-%m-%Y %H:%M:%S")
+                date = datetime.fromisoformat(date)
                 date = date.strftime(self.date_format)
         else:
             if isinstance(date, datetime):
+                date = date.strftime(self.date_format)
+            elif isinstance(date, int):
+                date = datetime.fromtimestamp(date)
                 date = date.strftime(self.date_format)
         has_text = False
         if "{text}" in unformatted_string:

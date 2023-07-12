@@ -384,9 +384,9 @@ class ReformatManager:
         option["text"] = content_metadata.text
         option["profile_username"] = self.authed.username
         option["model_username"] = content_metadata.__soft__.author.username
-        option["date_format"] = site_settings.date_format
+        option["date_format"] = site_settings.download_setup.date_format
         option["postedAt"] = media_item.created_at
-        option["text_length"] = site_settings.text_length
+        option["text_length"] = site_settings.download_setup.text_length
         option["directory"] = download_path
         option["price"] = content_metadata.price
         option["preview"] = media_item.preview

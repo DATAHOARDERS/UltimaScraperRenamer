@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ultima-scraper-renamer"
-version = "1.1.1"
+version = "1.1.2"
 description = ""
 authors = [
     "DIGITALCRIMINALS <89371864+digitalcriminals@users.noreply.github.com>",
@@ -13,7 +13,7 @@ include = ["ultima_scraper_renamer/py.typed"]
 python = ">=3.10,<3.12"
 tqdm = "^4.64.1"
 orjson = "^3.8.3"
-ultima-scraper-api = "^1.1.0"
+ultima-scraper-api = "^2.0.0"
 ultima-scraper-collection = "^1.1.0"
 
 

@@ -166,12 +166,10 @@ class ReformatManager:
         self.authed = authed
         self.filesystem_manager = filesystem_manager
         self.api = self.authed.get_api()
-        self.site_settings = self.api.get_site_settings()
 
     def prepare_reformat(self, media_item: MediaMetadata):
         content_metadata = media_item.__content_metadata__
         api = self.authed.get_api()
-        site_settings = api.get_site_settings()
         author = content_metadata.__soft__.get_author()
 
         filename = urlparse(media_item.urls[0]).path.split("/")[-1]
@@ -181,9 +179,9 @@ class ReformatManager:
             if content_metadata.archived
             else content_metadata.api_type
         )
-        download_path = self.filesystem_manager.get_directory_manager(
-            author.id
-        ).root_download_directory
+        directory_manager = self.filesystem_manager.get_directory_manager(author.id)
+        site_config = directory_manager.site_config
+        download_path = directory_manager.root_download_directory
         option: dict[str, Any] = {}
         option = option | content_metadata.__dict__
         option["site_name"] = api.site_name
@@ -195,10 +193,10 @@ class ReformatManager:
         option["media_type"] = media_item.media_type
         option["text"] = content_metadata.text
         option["profile_username"] = self.authed.username
-        option["model_username"] = content_metadata.__soft__.author.username
-        option["date_format"] = site_settings.download_setup.date_format
+        option["model_username"] = author.username
+        option["date_format"] = site_config.download_setup.date_format
         option["postedAt"] = media_item.created_at
-        option["text_length"] = site_settings.download_setup.text_length
+        option["text_length"] = site_config.download_setup.text_length
         option["directory"] = download_path
         option["price"] = content_metadata.price
         option["preview"] = media_item.preview
@@ -206,7 +204,10 @@ class ReformatManager:
         return ReformatItem(option)
 
     def drm_format(self, media_url: str, media_item: MediaMetadata):
-        site_settings = self.site_settings
+        content_metadata = media_item.__content_metadata__
+        author = content_metadata.__soft__.get_author()
+        directory_manager = self.filesystem_manager.get_directory_manager(author.id)
+        site_config = directory_manager.site_config
         temp_url = Path(media_url)
         name, ext = self.parse_filename(media_url)
         if "audio" in name:
@@ -217,10 +218,10 @@ class ReformatManager:
         media_item.urls = [temp_url]
         reformat_item = self.prepare_reformat(media_item)
         file_directory = reformat_item.reformat(
-            site_settings.file_directory_format
+            site_config.download_setup.directory_format
         ).joinpath("__drm__")
         reformat_item.directory = file_directory
-        file_path = reformat_item.reformat(site_settings.filename_format)
+        file_path = reformat_item.reformat(site_config.download_setup.filename_format)
         media_item.urls = [media_url]
         media_item.directory = file_directory
         media_item.filename = file_path.name

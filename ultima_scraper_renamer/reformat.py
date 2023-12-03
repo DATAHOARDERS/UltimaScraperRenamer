@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
-from ultima_scraper_api.classes.prepare_metadata import format_attributes
 from ultima_scraper_api.helpers import main_helper
 
 if TYPE_CHECKING:

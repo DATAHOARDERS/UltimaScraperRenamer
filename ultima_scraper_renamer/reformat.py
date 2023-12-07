@@ -53,7 +53,7 @@ class FormatAttributes(object):
 
 class ReformatItem:
     def __init__(self, option: dict[str, Any] = {}, keep_vars: bool = False) -> None:
-        format_variables = format_attributes()
+        format_variables = FormatAttributes()
         self.site_name = option.get("site_name", format_variables.site_name)
         self.post_id = option.get("post_id", format_variables.post_id)
         self.media_id = option.get("media_id", format_variables.media_id)
@@ -99,7 +99,7 @@ class ReformatItem:
         unformatted_string = unformatted.as_posix()
         extra_count = 0
         if type(date) is str:
-            format_variables2 = format_attributes()
+            format_variables2 = FormatAttributes()
             if date != format_variables2.date and date != "":
                 date = datetime.fromisoformat(date)
                 date = date.strftime(self.date_format)

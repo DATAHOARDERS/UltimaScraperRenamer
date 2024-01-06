@@ -26,7 +26,7 @@ class FormatAttributes(object):
     def __init__(self):
         self.site_name = "{site_name}"
         self.first_letter = "{first_letter}"
-        self.post_id = "{post_id}"
+        self.content_id = "{content_id}"
         self.media_id = "{media_id}"
         self.profile_username = "{profile_username}"
         self.model_username = "{model_username}"
@@ -55,7 +55,7 @@ class ReformatItem:
     def __init__(self, option: dict[str, Any] = {}, keep_vars: bool = False) -> None:
         format_variables = FormatAttributes()
         self.site_name = option.get("site_name", format_variables.site_name)
-        self.post_id = option.get("post_id", format_variables.post_id)
+        self.content_id = option.get("content_id", format_variables.content_id)
         self.media_id = option.get("media_id", format_variables.media_id)
         self.profile_username = option.get(
             "profile_username", format_variables.profile_username
@@ -87,14 +87,14 @@ class ReformatItem:
                         setattr(self, key, "")
 
     def reformat(self, unformatted: Path):
-        post_id = self.post_id
+        content_id = self.content_id
         media_id = self.media_id
         date = self.date
         text = self.text
         value = "Free"
         maximum_length = self.maximum_length
         text_length = self.text_length
-        post_id = "" if post_id is None else str(post_id)
+        content_id = "" if content_id is None else str(content_id)
         media_id = "" if media_id is None else str(media_id)
         unformatted_string = unformatted.as_posix()
         extra_count = 0
@@ -116,14 +116,16 @@ class ReformatItem:
             extra_count = len("{text}")
         if "{value}" in unformatted_string:
             if self.price:
-                if not self.preview:
+                if self.preview:
+                    value = "Previews"
+                else:
                     value = "Paid"
         directory = self.directory
         if not directory:
             raise Exception("Directory not found")
         path = unformatted_string.replace("{site_name}", self.site_name)
         path = path.replace("{first_letter}", self.model_username[0].capitalize())
-        path = path.replace("{post_id}", post_id)
+        path = path.replace("{content_id}", content_id)
         path = path.replace("{media_id}", media_id)
         path = path.replace("{profile_username}", self.profile_username)
         path = path.replace("{model_username}", self.model_username)
@@ -198,44 +200,44 @@ class ReformatManager:
 
     def prepare_reformat(self, media_item: MediaMetadata):
         content_metadata = media_item.__content_metadata__
+        final_api_type = "Uncategorized"
+        content_metadata_dict: dict[str, Any] = {}
+        if content_metadata:
+            final_api_type = content_metadata.api_type
+            content_metadata_dict = content_metadata.__dict__
+            content_metadata_dict["content_id"] = content_metadata.content_id
+            content_metadata_dict["text"] = content_metadata.text
+            content_metadata_dict["price"] = content_metadata.price
+            content_metadata_dict["archived"] = content_metadata.archived
+
         api = self.authed.get_api()
-        author = content_metadata.__soft__.get_author()
+        author = media_item.get_author()
 
         filename = urlparse(media_item.urls[0]).path.split("/")[-1]
         name, ext = filename.rsplit(".", 1)
-        final_api_type = (
-            os.path.join("Archived", content_metadata.api_type)
-            if content_metadata.archived
-            else content_metadata.api_type
-        )
         directory_manager = self.filesystem_manager.get_directory_manager(author.id)
         site_config = directory_manager.site_config
         download_path = directory_manager.root_download_directory
-        option: dict[str, Any] = {}
-        option = option | content_metadata.__dict__
+        option: dict[str, Any] = content_metadata_dict
         option["site_name"] = api.site_name
-        option["post_id"] = content_metadata.content_id
         option["media_id"] = media_item.id
         option["filename"] = name
         option["ext"] = ext
         option["api_type"] = final_api_type
         option["media_type"] = media_item.media_type
-        option["text"] = content_metadata.text
         option["profile_username"] = self.authed.username
         option["model_username"] = author.username
         option["date_format"] = site_config.download_setup.date_format
         option["postedAt"] = media_item.created_at
         option["text_length"] = site_config.download_setup.text_length
         option["directory"] = download_path
-        option["price"] = content_metadata.price
         option["preview"] = media_item.preview
-        option["archived"] = content_metadata.archived
         return ReformatItem(option)
 
     def drm_format(self, media_url: str, media_item: MediaMetadata):
-        content_metadata = media_item.__content_metadata__
-        author = content_metadata.__soft__.get_author()
-        directory_manager = self.filesystem_manager.get_directory_manager(author.id)
+        directory_manager = self.filesystem_manager.get_directory_manager(
+            media_item.user_id
+        )
         site_config = directory_manager.site_config
         temp_url = Path(media_url)
         name, ext = self.parse_filename(media_url)

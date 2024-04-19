@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -11,6 +10,8 @@ from ultima_scraper_api.helpers import main_helper
 
 if TYPE_CHECKING:
     import ultima_scraper_api
+
+    user_types = ultima_scraper_api.user_types
     from ultima_scraper_collection.managers.filesystem_manager import (
         DirectoryManager,
         FilesystemManager,
@@ -197,6 +198,24 @@ class ReformatManager:
         self.authed = authed
         self.filesystem_manager = filesystem_manager
         self.api = self.authed.get_api()
+
+    def prepare_user_reformat(
+        self, user: user_types, directory: Path, username: str | None = None
+    ):
+        user_username = username or user.username
+        authed = self.authed
+        assert self.filesystem_manager.directory_manager
+        site_config = self.filesystem_manager.directory_manager.site_config
+        reformat_item = ReformatItem()
+        reformat_item.site_name = authed.api.site_name
+        reformat_item.profile_username = authed.username
+        reformat_item.model_username = user_username
+        reformat_item.date = datetime.today()
+        download_setup = site_config.download_setup
+        reformat_item.date_format = download_setup.date_format
+        reformat_item.text_length = download_setup.text_length
+        reformat_item.directory = directory
+        return reformat_item
 
     def prepare_reformat(self, media_item: MediaMetadata):
         content_metadata = media_item.__content_metadata__

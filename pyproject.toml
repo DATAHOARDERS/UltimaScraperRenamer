@@ -1,12 +1,10 @@
 [tool.poetry]
 name = "ultima-scraper-renamer"
-version = "1.1.7"
+version = "1.1.71"
 description = ""
-authors = [
-    "UltimaHoarder <1285176+UltimaHoarder@users.noreply.github.com>",
-]
+authors = ["UltimaHoarder <1285176+UltimaHoarder@users.noreply.github.com>"]
 readme = "README.md"
-packages = [{include = "ultima_scraper_renamer"}]
+packages = [{ include = "ultima_scraper_renamer" }]
 include = ["ultima_scraper_renamer/py.typed"]
 
 [tool.poetry.dependencies]
@@ -15,7 +13,6 @@ tqdm = "^4.64.1"
 orjson = "^3.8.3"
 ultima-scraper-api = "^2.0.0"
 ultima-scraper-collection = "^2.0.0"
-
 
 
 [tool.poetry.group.dev.dependencies]
